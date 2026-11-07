@@ -9,13 +9,13 @@ import re
 from typing import Dict, List, Tuple
 
 
-def count_words(text: str) -> Counter:
+def count_words(text: str) -> Counter[str]:
     """Count Unicode words, keeping internal apostrophes but ignoring numbers."""
     text = text.casefold().replace("\u2019", "'")
     return Counter(re.findall(r"[^\W\d_]+(?:'[^\W\d_]+)*", text))
 
 
-def read_texts(directory: Path) -> Dict[str, Counter]:
+def read_texts(directory: Path) -> Dict[str, Counter[str]]:
     if not directory.is_dir():
         raise ValueError(
             f"Text folder not found: {directory}. "
@@ -27,7 +27,7 @@ def read_texts(directory: Path) -> Dict[str, Counter]:
     )
     if len(paths) < 2:
         raise ValueError("Add at least two .txt files, one per friend.")
-    texts = {}
+    texts: Dict[str, Counter[str]] = {}
     for path in paths:
         words = count_words(path.read_text(encoding="utf-8"))
         if not words:
@@ -37,14 +37,14 @@ def read_texts(directory: Path) -> Dict[str, Counter]:
 
 
 def compare(
-    words: Counter, others: Counter
+    words: Counter[str], others: Counter[str]
 ) -> Tuple[float, List[Tuple[str, float]]]:
     """Return smoothed KL in nats and positive contributions of observed words."""
     vocabulary = words.keys() | others.keys()
     word_total = sum(words.values()) + len(vocabulary)
     other_total = sum(others.values()) + len(vocabulary)
     divergence = 0.0
-    distinctive = []
+    distinctive: List[Tuple[str, float]] = []
     for word in sorted(vocabulary):
         p = (words[word] + 1) / word_total
         q = (others[word] + 1) / other_total
@@ -74,7 +74,7 @@ def main() -> None:
     except (OSError, UnicodeError, ValueError) as error:
         parser.error(str(error))
 
-    combined = Counter()
+    combined: Counter[str] = Counter()
     for words in texts.values():
         combined.update(words)
     print("Each friend compared with all the other friends combined.")
